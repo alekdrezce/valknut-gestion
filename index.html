@@ -111,6 +111,7 @@ dialog::backdrop{background:rgba(20,38,58,.45)}
 .tg td:first-child,.tg th:first-child{text-align:left;padding-left:8px;white-space:nowrap}
 .linkbtn{background:none;border:none;color:var(--pri);cursor:pointer;font:inherit;font-size:13px;padding:0}
 @media (prefers-reduced-motion:reduce){#toast{transition:none}}
+[hidden]{display:none !important}
 .login{position:fixed;inset:0;background:var(--nav);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
 .login form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:14px;color:#fff}
 .login .lg{display:flex;justify-content:center;margin-bottom:6px}
@@ -171,7 +172,7 @@ body.locked nav,body.locked main{visibility:hidden}
 <datalist id="etqs"><option>Titular</option><option>Alternativa</option><option>Golero 1</option><option>Golero 2</option><option>Golero 3</option><option>Campera</option><option>Pantalón</option></datalist>
 
 <script src="config.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.js"></script>
 <script>
 'use strict';
 /* ================= Datos por defecto ================= */
@@ -244,7 +245,22 @@ function migrate(d) {
 }
 const CFG = window.VALKNUT_CONFIG || {};
 const CONFIGURADO = !!(CFG.supabaseUrl && CFG.supabaseAnonKey && !/TU-PROYECTO|TU-CLAVE/.test(CFG.supabaseUrl + CFG.supabaseAnonKey));
-const sb = CONFIGURADO && window.supabase ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
+const sb = CONFIGURADO && window.supabase ? window.supabase.createClient(CFG.supabaseUrl.replace(/\/(rest|auth)\/v1\/?$/, '').replace(/\/$/, ''), CFG.supabaseAnonKey.trim(), {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false,
+          lock: async (name, timeout, fn) => fn() } // evita que el login quede trabado entre pestañas
+}) : null;
+const conTiempo = (p, ms) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error('TIEMPO')), ms))]);
+async function diagnostico() {
+  try {
+    const base = CFG.supabaseUrl.replace(/\/(rest|auth)\/v1\/?$/, '').replace(/\/$/, '');
+    const r = await conTiempo(fetch(base + '/auth/v1/settings', { headers: { apikey: CFG.supabaseAnonKey.trim() } }), 10000);
+    if (r.status === 401 || r.status === 403) return 'Supabase rechazó la clave de config.js. Revisá que sea la publishable o la anon.';
+    if (!r.ok) return 'Supabase respondió con error ' + r.status + '. Fijate si el proyecto está pausado.';
+    const j = await r.json();
+    if (j.external && j.external.email === false) return 'El acceso con email está desactivado en Supabase (Authentication → Sign In / Providers → Email).';
+    return 'Supabase responde bien, pero el inicio de sesión no terminó. Cerrá otras pestañas o ventanas de la app y probá de nuevo.';
+  } catch (e) { return e.message === 'TIEMPO' ? 'Supabase no responde. Fijate si el proyecto está pausado (en supabase.com, botón Restore).' : 'No se pudo conectar con Supabase: ' + e.message; }
+}
 const BUCKET = 'adjuntos';
 const COLS = { tela: 'telas', producto: 'productos', cliente: 'clientes', pedido: 'pedidos' };
 let USER = null, LOADED = false;
@@ -372,8 +388,19 @@ function pantallaLogin(msg) {
     <button class="btn pri">Entrar</button><p id="loginErr">${esc(msg || '')}</p></form>`;
   $('#loginForm').onsubmit = async e => {
     e.preventDefault(); const f = new FormData(e.target); $('#loginErr').textContent = 'Entrando…';
-    const { data, error } = await sb.auth.signInWithPassword({ email: f.get('email'), password: f.get('pass') });
-    if (error) { $('#loginErr').textContent = /invalid/i.test(error.message) ? 'Email o contraseña incorrectos.' : 'No se pudo entrar. Revisá tu conexión.'; return; }
+    let data, error;
+    try { ({ data, error } = await conTiempo(sb.auth.signInWithPassword({ email: String(f.get('email')).trim(), password: f.get('pass') }), 15000)); }
+    catch (e) { $('#loginErr').textContent = 'Revisando la conexión…'; $('#loginErr').textContent = await diagnostico(); return; }
+    if (error) {
+      const m = error.message || '';
+      $('#loginErr').textContent =
+        /not confirmed/i.test(m) ? 'Tu usuario no está confirmado. En Supabase → Authentication → Users, confirmalo.' :
+        /logins are disabled|provider/i.test(m) ? 'El acceso con email está desactivado en Supabase. Activá el proveedor Email (dejando los registros nuevos apagados).' :
+        /invalid login|invalid credentials/i.test(m) ? 'Email o contraseña incorrectos.' :
+        /fetch|network/i.test(m) ? 'No se pudo conectar con Supabase. Revisá tu conexión o que el proyecto no esté pausado.' :
+        'No se pudo entrar: ' + m;
+      console.error(error); return;
+    }
     USER = data.user; iniciar();
   };
 }
@@ -387,7 +414,11 @@ async function iniciar() {
     if (!iniciar.sub) { subscribe(); iniciar.sub = true; }
   } catch (e) {
     console.error(e); setStatus('error');
-    if (!S) $('#main').innerHTML = '<div class="empty">No hay conexión. Se va a cargar cuando vuelva internet.</div>';
+    const m = e?.message || String(e);
+    const hint = /relation|does not exist|registros/i.test(m) ? 'Parece que falta la tabla: volvé a correr supabase.sql en el SQL Editor.'
+      : /JWT|apikey|API key|Invalid API/i.test(m) ? 'La clave de config.js no es válida.'
+      : 'Se va a reintentar solo cuando vuelva la conexión.';
+    if (!S) $('#main').innerHTML = `<div class="empty"><p>No se pudieron cargar los datos.</p><p class="muted" style="font-size:13px">${esc(hint)}<br>Detalle: ${esc(m)}</p><button class="btn" data-act="salir">Cerrar sesión</button></div>`;
     clearTimeout(iniciar.t); iniciar.t = setTimeout(iniciar, 10000);
   }
 }
@@ -1047,10 +1078,16 @@ document.addEventListener('drop', e => {
 
 /* ================= Inicio ================= */
 $('#brand').insertAdjacentHTML('afterbegin', logoSVG('#FFFFFF', 92));
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator) {
+  const habiaSW = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(r => r.update()).catch(() => {});
+  // Cuando llega una versión nueva de la app, recarga una sola vez para usarla
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (habiaSW && !sessionStorage.getItem('vk-recargado')) { sessionStorage.setItem('vk-recargado', '1'); location.reload(); } });
+}
 (async () => {
   if (!sb) return pantallaLogin();
-  const { data: { session } } = await sb.auth.getSession();
+  let session = null;
+  try { ({ data: { session } } = await conTiempo(sb.auth.getSession(), 8000)); } catch (e) {}
   if (session) { USER = session.user; iniciar(); } else pantallaLogin();
   sb.auth.onAuthStateChange((ev, s) => { if (ev === 'SIGNED_OUT') location.reload(); else if (s?.user) USER = s.user; });
 })();
