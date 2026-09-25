@@ -125,28 +125,73 @@ body.locked nav,body.locked main{visibility:hidden}
 #sync i{width:8px;height:8px;border-radius:50%;background:var(--ok)}
 #sync.saving i{background:#D9A43A}#sync.error i{background:var(--bad)}#sync.error{color:var(--bad)}
 .hm{}
+.ni,.ns{display:none}
 @media (max-width:760px){
-  body{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;height:100dvh;font-size:15px}
-  #main{grid-row:1;height:auto;padding:52px 14px 30px}
-  nav{grid-row:2;height:auto;flex-direction:row;align-items:center;overflow-x:auto;gap:2px;padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+  body{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;height:100dvh;font-size:15px}
+  #main{grid-row:1;height:auto;min-width:0;padding:calc(50px + env(safe-area-inset-top)) 14px 96px}
+
+  /* Menú inferior con íconos */
+  nav{grid-row:2;height:auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;padding:4px 2px calc(4px + env(safe-area-inset-bottom));border-top:1px solid #1C1C20}
   .brand,.promo-flag{display:none}
-  nav a{white-space:nowrap;padding:10px 11px;font-size:14px}
-  nav a.on{box-shadow:inset 0 -3px 0 var(--pri)}
-  nav .btn{margin:0 0 0 4px;white-space:nowrap;padding:9px 12px}
-  input,select,textarea{font-size:16px}
-  .stats{grid-template-columns:1fr 1fr;gap:10px}.stat b{font-size:22px}
-  .grid2,.grid2[style]{grid-template-columns:1fr !important}
-  .head{flex-direction:column;align-items:stretch;gap:14px}
-  .head .fields{grid-template-columns:1fr 1fr}
-  .dorsal{font-size:52px}
-  .pipe{grid-template-columns:repeat(3,1fr)}
-  .panel{padding:14px;overflow-x:auto}
-  .hm{display:none}
+  nav a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 6px;font-size:11px;line-height:1.1;border-radius:6px;text-align:center;min-width:0}
+  nav a .ni{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  nav a .nl{display:none} nav a .ns{display:inline}
+  nav a:hover{background:none}
+  nav a.on{background:none;box-shadow:none;color:#fff}
+  nav a.on .ni{stroke:var(--pri)}
+  #fab{position:fixed;right:16px;bottom:calc(74px + env(safe-area-inset-bottom));z-index:15;width:56px;height:56px;margin:0;padding:0;border-radius:50%;font-size:0;box-shadow:0 6px 18px rgba(217,2,103,.45)}
+  body:not([data-view=inicio]):not([data-view=pedidos]) #fab{display:none}
+  .vpedidos-top{display:none}
+  #fab::before{content:'+';font-size:32px;line-height:56px;font-weight:300}
+
+  /* Estructura general */
+  input,select,textarea{font-size:16px;max-width:100%}
   h1{font-size:24px}
+  .sub{margin-bottom:16px}
   .row.between>div>.sub{margin-bottom:10px}
-  #sync{top:calc(8px + env(safe-area-inset-top));right:10px}
+  .row.between>.row{width:100%}
+  .row.between>.row>input{flex:1;width:auto !important}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.stat{padding:12px}.stat b{font-size:22px}
+  .grid2,.grid2[style]{grid-template-columns:minmax(0,1fr) !important;gap:0}
+  .panel{padding:14px;margin-bottom:14px;overflow-x:auto}
+  .pipe{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .hm{display:none}
+  .chips{flex-wrap:nowrap;overflow-x:auto;margin:10px -14px 14px;padding:0 14px 4px}
+  .chip{white-space:nowrap}
+  #sync{top:calc(10px + env(safe-area-inset-top));right:10px;padding:5px}
+  #sync:not(.error) span{display:none}
+  #sync.error{padding:4px 10px}
   dialog{width:calc(100vw - 24px)}
-  .adj-grid{grid-template-columns:repeat(2,1fr)}
+  .adj-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+
+  /* Encabezado del pedido */
+  .head{flex-direction:column;align-items:stretch;gap:14px}
+  .head .fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .head .fields label:first-child{grid-column:1/-1}
+  .head .fields select,.head .fields input{width:100%;min-width:0}
+  .dorsal{font-size:52px}
+  .dorsal br{display:none}
+
+  /* Tablas convertidas en tarjetas */
+  table.cardable,table.cardable tbody,table.cardable tr,table.cardable td{display:block;width:100%}
+  table.cardable tr.thr{display:none}
+  table.cardable tr{position:relative;background:var(--soft);border-radius:6px;padding:8px 12px;margin-bottom:10px}
+  table.cardable tr.click:hover td{background:none}
+  table.cardable td{border:none;padding:5px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;text-align:right;min-width:0}
+  table.cardable td::before{content:attr(data-label);color:var(--muted);font-size:12px;text-align:left;flex-shrink:0}
+  table.cardable td[data-label=""]::before{display:none}
+  table.cardable td:first-child{font-weight:600;font-size:16px;text-align:left;justify-content:flex-start;padding-right:30px}
+  table.cardable td:first-child::before{display:none}
+  table.cardable td:first-child>input,table.cardable td:first-child>select{width:100% !important;font-weight:400}
+  table.cardable td:has(> .x:only-child){position:absolute;top:6px;right:4px;width:auto;padding:0}
+  table.cardable td[data-label=""]:not(:first-child){justify-content:flex-end;flex-wrap:wrap}
+  table.cardable td input.n{width:110px !important}
+  table.cardable td>.row,table.cardable td>div{justify-content:flex-end}
+  table.cardable td[data-label="Incluye"]{flex-direction:column;align-items:stretch;text-align:left}
+  table.cardable td[data-label="Incluye"]>div.row{justify-content:flex-start}
+  table.cardable td[data-label="Incluye"] select{flex:1;min-width:0}
+  table.cardable td[data-label="Incluye"] .btn{align-self:flex-start}
+  table.keep{font-size:13px} table.keep td,table.keep th{padding:6px 4px}
 }
 </style>
 </head>
@@ -155,13 +200,13 @@ body.locked nav,body.locked main{visibility:hidden}
 <div id="sync" hidden><i></i><span>Sincronizado</span></div>
 <nav id="nav">
   <div class="brand" id="brand"><span>Gestión de pedidos</span></div>
-  <a data-go="inicio">Inicio</a>
-  <a data-go="pedidos">Pedidos</a>
-  <a data-go="clientes">Clientes</a>
-  <a data-go="productos">Productos y costos</a>
-  <a data-go="reportes">Reportes</a>
-  <a data-go="ajustes">Ajustes</a>
-  <button class="btn pri" data-act="nuevoPedido">Nuevo presupuesto</button>
+  <a data-go="inicio"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Inicio</a>
+  <a data-go="pedidos"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h4"/></svg>Pedidos</a>
+  <a data-go="clientes"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M16.5 14.6c2.6.2 4.4 1.9 5 5.4"/></svg>Clientes</a>
+  <a data-go="productos"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3l-5 3 2 5 3-1v11h8V10l3 1 2-5-5-3c-.5 1.7-2 2.8-4 2.8S8.5 4.7 8 3z"/></svg><span class="nl">Productos y costos</span><span class="ns">Costos</span></a>
+  <a data-go="reportes"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>Reportes</a>
+  <a data-go="ajustes"><svg class="ni" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ajustes</a>
+  <button class="btn pri" id="fab" data-act="nuevoPedido" aria-label="Nuevo presupuesto">Nuevo presupuesto</button>
   <div class="promo-flag" id="promoFlag"></div>
 </nav>
 <main id="main"></main>
@@ -483,11 +528,22 @@ function getPath(path) {
 }
 
 /* ================= Render ================= */
+function etiquetarTablas(root) { // en el celular, cada fila de tabla se muestra como tarjeta con sus títulos
+  root.querySelectorAll('table').forEach(t => {
+    if (t.matches('.tot,.tg,.keep')) return;
+    const hr = [...t.rows].find(r => r.querySelector('th')); if (!hr) return;
+    t.classList.add('cardable'); hr.classList.add('thr');
+    const labels = [...hr.cells].map(c => c.textContent.trim());
+    [...t.rows].forEach(r => { if (r !== hr) [...r.cells].forEach((c, i) => { c.dataset.label = labels[i] || ''; }); });
+  });
+}
 function render() {
   const m = $('#main'), st = m.scrollTop;
   const views = { inicio: vInicio, pedidos: vPedidos, pedido: () => vPedido(U.param), clientes: vClientes, productos: vProductos, reportes: vReportes, ajustes: vAjustes };
   m.innerHTML = (views[U.view] || vInicio)();
   m.scrollTop = st;
+  etiquetarTablas(m);
+  document.body.dataset.view = U.view;
   document.querySelectorAll('#nav [data-go]').forEach(a => a.classList.toggle('on', a.dataset.go === U.view || (U.view === 'pedido' && a.dataset.go === 'pedidos')));
   hidratarImagenes();
   $('#promoFlag').textContent = promoActiva() ? `${S.config.promo.nombre} activa${S.config.promo.hasta ? ' hasta el ' + fdate(S.config.promo.hasta) : ''}` : '';
@@ -544,7 +600,7 @@ function vPedidos() {
   if (q) l = l.filter(o => (cliente(o.clienteId)?.nombre || '').toLowerCase().includes(q) || nro(o).includes(q));
   l.sort((a, b) => b.numero - a.numero);
   return `<div class="row between"><div><h1>Pedidos</h1><p class="sub">Presupuestos y pedidos en curso.</p></div>
-    <div class="row"><input placeholder="Buscar equipo o número" data-f="U.q" data-live="1" value="${esc(U.q)}" style="width:240px"><button class="btn pri" data-act="nuevoPedido">Nuevo presupuesto</button></div></div>
+    <div class="row"><input placeholder="Buscar equipo o número" data-f="U.q" data-live="1" value="${esc(U.q)}" style="width:240px"><button class="btn pri vpedidos-top" data-act="nuevoPedido">Nuevo presupuesto</button></div></div>
   <div class="chips">${filtros.map(f => `<button class="chip ${U.filtro === f ? 'on' : ''}" data-act="filtro" data-v="${f}">${f}</button>`).join('')}</div>
   <div class="panel">${l.length ? `<table><tr><th>Nº</th><th>Equipo</th><th class="hm">Fecha</th><th class="hm">Entrega</th><th>Estado</th><th class="r hm">Unid.</th><th class="r">Total</th><th class="r">Saldo</th><th class="r hm">Ganancia</th></tr>
   ${l.map(o => { const t = tot(o); return `<tr class="click" data-go="pedido" data-id="${o.id}"><td><b>${nro(o)}</b></td><td>${esc(cliente(o.clienteId)?.nombre || 'Sin cliente')}</td>
@@ -769,9 +825,9 @@ function vReportes() {
     <div class="stat"><span>Prendas vendidas</span><b>${vend.reduce((a, o) => a + tot(o).unidades, 0)}</b></div>
     <div class="stat"><span>Presupuestos que se confirmaron</span><b>${pres ? Math.round(conf / pres * 100) : 0}%</b></div>
   </div>
-  <div class="panel"><h2>Últimos 12 meses</h2><table><tr><th>Mes</th><th class="r">Pedidos</th><th class="r">Prendas</th><th class="r">Vendido</th><th class="r">Ganancia</th><th style="width:35%"></th></tr>
+  <div class="panel"><h2>Últimos 12 meses</h2><table class="keep"><tr><th>Mes</th><th class="r">Pedidos</th><th class="r">Prendas</th><th class="r">Vendido</th><th class="r">Ganancia</th><th class="hm" style="width:35%"></th></tr>
   ${data.map(x => `<tr><td>${nombreMes(x.m)}</td><td class="r">${x.n}</td><td class="r">${x.u}</td><td class="r">${money(x.v)}</td><td class="r oro">${money(x.g)}</td>
-  <td><div class="bar" style="width:${x.v / maxV * 100}%"></div><div class="bar g" style="width:${x.g / maxV * 100}%;margin-top:3px"></div></td></tr>`).join('')}</table></div>
+  <td class="hm"><div class="bar" style="width:${x.v / maxV * 100}%"></div><div class="bar g" style="width:${x.g / maxV * 100}%;margin-top:3px"></div></td></tr>`).join('')}</table></div>
   <div class="grid2" style="grid-template-columns:1fr 1fr">
     <div class="panel"><h2>Productos más vendidos</h2>${topL.length ? `<table><tr><th>Producto</th><th class="r">Unid.</th><th class="r">Vendido</th><th class="r">Ganancia</th></tr>
     ${topL.map(([id, x]) => `<tr><td>${esc(prod(id)?.nombre || 'Producto eliminado')}</td><td class="r">${x.u}</td><td class="r">${money(x.v)}</td><td class="r oro">${money(x.g)}</td></tr>`).join('')}</table>` : '<p class="muted">Sin ventas todavía.</p>'}</div>
