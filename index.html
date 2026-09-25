@@ -127,11 +127,12 @@ body.locked nav,body.locked main{visibility:hidden}
 .hm{}
 .ni,.ns{display:none}
 @media (max-width:760px){
-  body{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;height:100dvh;font-size:15px}
-  #main{grid-row:1;height:auto;min-width:0;padding:calc(50px + env(safe-area-inset-top)) 14px 96px}
+  html,body{height:auto;min-height:100%}
+  body{display:block;font-size:15px;overflow-x:hidden}
+  #main{height:auto;overflow:visible;min-width:0;padding:calc(50px + env(safe-area-inset-top)) 14px calc(96px + env(safe-area-inset-bottom))}
 
   /* Menú inferior con íconos */
-  nav{grid-row:2;height:auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;padding:4px 2px calc(4px + env(safe-area-inset-bottom));border-top:1px solid #1C1C20}
+  nav{position:fixed;left:0;right:0;bottom:0;z-index:30;height:auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:0;padding:4px 2px calc(4px + env(safe-area-inset-bottom));border-top:1px solid #1C1C20}
   .brand,.promo-flag{display:none}
   nav a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 6px;font-size:11px;line-height:1.1;border-radius:6px;text-align:center;min-width:0}
   nav a .ni{display:block;width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -538,12 +539,13 @@ function etiquetarTablas(root) { // en el celular, cada fila de tabla se muestra
   });
 }
 function render() {
-  const m = $('#main'), st = m.scrollTop;
+  const m = $('#main'), st = m.scrollTop, wy = window.scrollY;
   const views = { inicio: vInicio, pedidos: vPedidos, pedido: () => vPedido(U.param), clientes: vClientes, productos: vProductos, reportes: vReportes, ajustes: vAjustes };
   m.innerHTML = (views[U.view] || vInicio)();
-  m.scrollTop = st;
   etiquetarTablas(m);
   document.body.dataset.view = U.view;
+  m.scrollTop = st;
+  if (wy) window.scrollTo(0, wy);
   document.querySelectorAll('#nav [data-go]').forEach(a => a.classList.toggle('on', a.dataset.go === U.view || (U.view === 'pedido' && a.dataset.go === 'pedidos')));
   hidratarImagenes();
   $('#promoFlag').textContent = promoActiva() ? `${S.config.promo.nombre} activa${S.config.promo.hasta ? ' hasta el ' + fdate(S.config.promo.hasta) : ''}` : '';
@@ -556,7 +558,7 @@ function rerender() {
     if (key) { const n = document.querySelector(`[data-f="${key}"]`); if (n) { n.focus({ preventScroll: true }); try { if (s != null) n.setSelectionRange(s, s); } catch (e) {} } }
   }, 0);
 }
-function go(v, id) { U.view = v; U.param = id || null; $('#main').scrollTop = 0; render(); }
+function go(v, id) { U.view = v; U.param = id || null; $('#main').scrollTop = 0; window.scrollTo(0, 0); render(); }
 
 /* ---------- Inicio ---------- */
 function vInicio() {
